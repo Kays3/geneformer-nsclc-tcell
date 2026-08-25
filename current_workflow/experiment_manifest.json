@@ -5,8 +5,8 @@
     "fine_tuning": "complete",
     "pre_perturbation_evaluation": "complete",
     "perturbation_smoke_test": "complete",
-    "heldout_all_gene_perturbation": "running",
-    "final_perturbation_statistics": "pending"
+    "heldout_all_gene_perturbation": "complete",
+    "final_perturbation_statistics": "complete"
   },
   "source_atlas": "KD/data/nsclc/nsclc_integrated.h5ad",
   "final_dataset": {
