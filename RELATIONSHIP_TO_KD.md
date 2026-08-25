@@ -15,7 +15,16 @@ The large files are intentionally outside Git in:
 ```
 
 (The SCLC line of work's `KD/sclc_luad_normal_htan_*` subtrees belong to the
-separate [`geneformer-sclc-tcell`](https://github.com/Kays3/geneformer-sclc-tcell) repo.)
+separate [`geneformer-sclc-tcell`](https://github.com/Kays3/geneformer-sclc-tcell) repo.
+The integrative epithelial/tumor-microenvironment line of work, spanning both
+cancer types, belongs to
+[`geneformer-epithelial-tme`](https://github.com/Kays3/geneformer-epithelial-tme)
+-- it reads this atlas's malignant/epithelial cells directly, from its actual
+location at
+`/home/kaisar/workspace/geneformer-uv-starter/geneformer-workspace/analysis/data/nsclc/nsclc_integrated.h5ad`,
+**not** the `KD/data/nsclc/nsclc_integrated.h5ad` path listed above -- that
+path does not currently resolve on `thinkstation2`; this doc is stale and
+should be corrected separately.)
 
 Keep the KD directory layout stable unless all workflow scripts and path
 configuration are updated together.
