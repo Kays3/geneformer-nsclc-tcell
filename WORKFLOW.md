@@ -116,7 +116,10 @@ re-run. Delete the retired account's copy yourself once `--verify` passes.
 
 On 2026-08-07 the laptop and `thinkstation2` had each committed on top of the same
 parent, forking history. Untangling it needed a manual rebase. Nothing was lost, but the
-following practices would have prevented it entirely.
+following practices would have prevented it entirely. This incident predates the
+SCLC/NSCLC repo split, and its examples below are from the SCLC line of work
+(now [`geneformer-sclc-tcell`](https://github.com/Kays3/geneformer-sclc-tcell))
+— kept verbatim as an honest historical record; the *lessons* apply equally here.
 
 ### 1. Run analyses from the repo checkout, not a scratch directory
 

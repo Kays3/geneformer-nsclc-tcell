@@ -4,7 +4,7 @@
 # Source it, do not execute it:
 #
 #   source tools/lab_env.sh
-#   python sclc_validation/primary_test_perturbation/scripts/ambient_risk_diagnostic.py
+#   python current_workflow/perturbation_statistics/build_analysis.py
 #
 # Resolution order, first hit wins per variable:
 #   1. anything already exported in the environment  (explicit override)
@@ -24,10 +24,8 @@ _USER_ENV="${LAB_ENV_FILE:-$HOME/.config/geneformer-lung-tcell/paths.env}"
 [[ -r "$_USER_ENV" ]] && source "$_USER_ENV"
 
 # Defaults only fill variables the caller has not already set.
-: "${SCLC_PERTURBATION_ROOT:=$_LAB_ROOT/KD/sclc_luad_normal_htan_heldout_allgene_perturbation}"
-: "${TARGETED_PANEL_RUN_DIR:=$_LAB_ROOT/KD/sclc_luad_normal_htan_targeted_panel_perturbation}"
-: "${HTAN_H5AD:=$_LAB_ROOT/KD/sclc_luad_normal_htan_finetune/data/htan_sclc_luad_normal_tcells_prepared.h5ad}"
-: "${GSE263196_RAW_DIR:=$_LAB_ROOT/spatial_raw/GSE263196_RAW}"
+: "${ANALYSIS_ROOT:=$_LAB_ROOT/KD/tcell_luad_lusc_normal_luscmax7000_heldout_allgene_perturbation}"
+: "${PERTURBATION_STATS_DIR:=$ANALYSIS_ROOT/stats}"
 : "${GENEFORMER_TOKEN_DICT:=$_LAB_ROOT/geneformer/geneformer/token_dictionary_gc104M.pkl}"
 : "${GENEFORMER_MODEL_DIR:=$_LAB_ROOT/geneformer/Geneformer-V2-104M}"
 # The interpreter is deliberately NOT under $_LAB_ROOT. A virtualenv embeds the
@@ -36,8 +34,8 @@ _USER_ENV="${LAB_ENV_FILE:-$HOME/.config/geneformer-lung-tcell/paths.env}"
 # own with geneformer_uv_setup/scripts/bootstrap_workspace.sh.
 : "${PYTHON_BIN:=$HOME/workspace/geneformer-uv-starter/.venv/bin/python}"
 
-export SCLC_PERTURBATION_ROOT TARGETED_PANEL_RUN_DIR HTAN_H5AD \
-       GSE263196_RAW_DIR GENEFORMER_TOKEN_DICT GENEFORMER_MODEL_DIR PYTHON_BIN
+export ANALYSIS_ROOT PERTURBATION_STATS_DIR \
+       GENEFORMER_TOKEN_DICT GENEFORMER_MODEL_DIR PYTHON_BIN
 
 lab_env_check() {
     # Report which resolved paths actually exist. Missing entries are printed
@@ -45,8 +43,8 @@ lab_env_check() {
     # for the arm it ran.
     local name value missing=0
     printf '\n\033[1mResolved lab paths\033[0m\n'
-    for name in SCLC_PERTURBATION_ROOT TARGETED_PANEL_RUN_DIR HTAN_H5AD \
-                GSE263196_RAW_DIR GENEFORMER_TOKEN_DICT GENEFORMER_MODEL_DIR PYTHON_BIN; do
+    for name in ANALYSIS_ROOT PERTURBATION_STATS_DIR \
+                GENEFORMER_TOKEN_DICT GENEFORMER_MODEL_DIR PYTHON_BIN; do
         value="${!name}"
         if [[ -e "$value" ]]; then
             printf '  \033[32mok     \033[0m %-24s %s\n' "$name" "$value"

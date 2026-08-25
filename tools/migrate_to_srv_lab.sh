@@ -52,9 +52,8 @@ warn() { printf '  ! %s\n' "$*" >&2; }
 [[ $EUID -eq 0 ]] || { warn "must run as root (sudo)"; exit 1; }
 [[ -d "$SRC" ]] || { warn "source not found: $SRC"; exit 1; }
 
-# Everything the analysis actually needs: the experiment workspace, the model
-# weights and venv-adjacent assets, and the spatial raw data that lives inside
-# the old repo checkout rather than in KD.
+# Everything the analysis actually needs: the experiment workspace and the
+# model weights / venv-adjacent assets.
 SUBDIRS=(
     "KD"
 )
@@ -69,7 +68,6 @@ RSYNC_EXCLUDES=(--exclude '.venv/' --exclude '__pycache__/' --exclude '*.pyc')
 # inside the venv-bearing tree, so it is pulled out explicitly rather than copying
 # that whole directory.
 EXTRA_PATHS=(
-    "/home/$SRC_USER/workspace/geneformer-lung-tcell/sclc_validation/audit/source_metadata/GSE263196_RAW:spatial_raw/GSE263196_RAW"
     "/home/$SRC_USER/workspace/geneformer-uv-starter/geneformer-workspace/Geneformer:geneformer"
 )
 

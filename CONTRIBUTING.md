@@ -46,7 +46,7 @@ python -m compileall \
   current_workflow \
   geneformer_uv_setup \
   migration \
-  sclc_validation
+  tools
 
 # In a bootstrapped Geneformer workspace, verify the environment.
 uv run --frozen python scripts/smoke_test.py \
