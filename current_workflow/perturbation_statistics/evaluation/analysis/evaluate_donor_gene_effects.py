@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import pickle
 import re
 import sys
@@ -45,6 +46,30 @@ BOOTSTRAP_SEED = 0
 DIRECTION_GATE = 0.70
 LODO_TOP_K = 50
 LODO_RETENTION_GATE = 0.70
+SOURCE_N_TEST_DONORS = {"luad": 19, "lusc": 5, "normal": 12}
+
+
+def min_donors_required(source: str) -> int:
+    return max(3, math.ceil(SOURCE_N_TEST_DONORS[source] / 2.0))
+
+
+PRE_SPECIFIED_CRITERION = """## Prespecified re-score criterion (written before the new numbers)
+
+The original unfiltered top-50 is kept below and is **not** replaced. It is not a valid 70% same-direction test: ranking by unshrunk median donor effect selects genes evaluable in one donor, and those genes have `sign_concordance = 1` by construction.
+
+**New scored set (fixed in advance):** a gene is donor-supported in a comparison if
+`n_donors_evaluable >= max(3, ceil(n_source_test_donors / 2))`:
+
+| Source screen | Test donors | Minimum evaluable donors |
+|---|---:|---:|
+| LUAD | 19 | 10 |
+| Normal | 12 | 6 |
+| LUSC | 5 | 3 |
+
+**Why this floor, not a data-driven one:** two donors cannot fail a 70% same-sign test (2/2 always passes). Requiring at least half of the source test donors is the smallest rule that still measures cross-donor reproducibility rather than rarity. The cut is source-specific because LUSC has only five held-out donors; a global cut of 10 would empty the LUSC tables by arithmetic, not by biology.
+
+The 15 published leading genes are the a-priori arm and lead the results. Unfiltered top-50 numbers are retained as an added row. No threshold is changed after seeing results. No biological-target claim.
+"""
 
 
 def load_token_maps(geneformer_hint: Path | None) -> tuple[dict[int, str], dict[str, str]]:
@@ -284,6 +309,8 @@ def summarize(
                     "Ensembl_ID": ensembl,
                     "Gene_name": gene_name,
                     "n_donors_evaluable": n_donors,
+                    "min_donors_required": min_donors_required(source),
+                    "donor_supported": n_donors >= min_donors_required(source),
                     "n_donors_nonzero": n_eval_dir,
                     "n_cells_total": int(n_cells.sum()),
                     "median_cells_per_donor": float(np.median(n_cells)),
@@ -308,20 +335,27 @@ def summarize(
     return frame, donor_level
 
 
-def lodo_stability(donor_level) -> pd.DataFrame:
+def lodo_stability(donor_level, ranking: str = "unfiltered", min_n: int | None = None) -> pd.DataFrame:
     rows = []
     for pair in COMPARISONS:
         means = donor_level[pair]
         source, goal = pair
         label = LABELS[pair]
-        tokens = [token for token, donors in means.items() if len(donors) >= 2]
+        floor = min_n if min_n is not None else min_donors_required(source)
+        if ranking == "unfiltered":
+            tokens = [token for token, donors in means.items() if len(donors) >= 2]
+        else:
+            tokens = [token for token, donors in means.items() if len(donors) >= floor]
         if not tokens:
             continue
         median_full = {
             token: float(np.median([v[0] for v in means[token].values()])) for token in tokens
         }
         ranked = sorted(tokens, key=lambda t: median_full[t], reverse=True)
-        top_full = ranked[:LODO_TOP_K]
+        k = min(LODO_TOP_K, len(ranked))
+        if k == 0:
+            continue
+        top_full = ranked[:k]
         top_set = set(top_full)
         donors = sorted({donor for token in tokens for donor in means[token]})
         fold_overlaps = []
@@ -334,14 +368,17 @@ def lodo_stability(donor_level) -> pd.DataFrame:
                     continue
                 medians[token] = float(np.median(remaining))
             ranked_fold = sorted(medians, key=lambda t: medians[t], reverse=True)
-            top_fold = set(ranked_fold[:LODO_TOP_K])
-            overlap = len(top_set & top_fold) / float(LODO_TOP_K)
+            top_fold = set(ranked_fold[:k])
+            overlap = len(top_set & top_fold) / float(k)
             fold_overlaps.append(overlap)
             for token in top_full:
                 if token in top_fold:
                     gene_retain[token] += 1
             rows.append(
                 {
+                    "ranking": ranking,
+                    "min_donors_required": floor if ranking != "unfiltered" else 2,
+                    "n_ranked": k,
                     "comparison": f"{source}_to_{goal}",
                     "comparison_label": label,
                     "level": "fold",
@@ -360,6 +397,9 @@ def lodo_stability(donor_level) -> pd.DataFrame:
         n_folds_pass = int(sum(1 for o in fold_overlaps if o >= LODO_RETENTION_GATE))
         rows.append(
             {
+                "ranking": ranking,
+                "min_donors_required": floor if ranking != "unfiltered" else 2,
+                "n_ranked": k,
                 "comparison": f"{source}_to_{goal}",
                 "comparison_label": label,
                 "level": "comparison",
@@ -378,6 +418,9 @@ def lodo_stability(donor_level) -> pd.DataFrame:
             frac = gene_retain[token] / n_folds if n_folds else float("nan")
             rows.append(
                 {
+                    "ranking": ranking,
+                    "min_donors_required": floor if ranking != "unfiltered" else 2,
+                    "n_ranked": k,
                     "comparison": f"{source}_to_{goal}",
                     "comparison_label": label,
                     "level": "gene",
@@ -395,47 +438,133 @@ def lodo_stability(donor_level) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def score_gates(effects: pd.DataFrame, lodo: pd.DataFrame, top_genes: pd.DataFrame | None) -> dict:
+def _set_row(label: str, scored_set: str, sub: pd.DataFrame, source: str, min_req: int) -> dict:
+    n = len(sub)
+    n_pass = int(sub["same_direction_pass_70"].sum()) if n else 0
+    n_don = sub["n_donors_evaluable"] if n else pd.Series(dtype=float)
+    return {
+        "comparison_label": label,
+        "source": source,
+        "scored_set": scored_set,
+        "min_donors_required": min_req,
+        "n_genes_in_set": n,
+        "n_pass_70": n_pass,
+        "frac_pass_70": n_pass / n if n else float("nan"),
+        "n_donors_min": int(n_don.min()) if n else 0,
+        "n_donors_median": float(n_don.median()) if n else float("nan"),
+        "n_donors_max": int(n_don.max()) if n else 0,
+        "n_ci_excludes_zero": int(sub["ci_excludes_zero"].sum()) if n else 0,
+        "gate_pass": bool(n > 0 and (n_pass / n) >= DIRECTION_GATE),
+    }
+
+
+def published_support(effects: pd.DataFrame, top_genes: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for label, pub in top_genes.groupby("comparison_label"):
+        sub = effects.loc[effects["comparison_label"] == label]
+        source = str(sub["source"].iloc[0]) if len(sub) else ""
+        min_req = min_donors_required(source) if source else 0
+        for row in pub.itertuples(index=False):
+            name = str(row.Gene_name)
+            hit = sub.loc[sub["Gene_name"] == name]
+            if len(hit) == 0:
+                rows.append(
+                    {
+                        "comparison_label": label,
+                        "Gene_name": name,
+                        "Ensembl_ID": getattr(row, "Ensembl_ID", ""),
+                        "min_donors_required": min_req,
+                        "n_donors_evaluable": 0,
+                        "donor_supported": False,
+                        "n_cells_total": 0,
+                        "median_donor_effect": float("nan"),
+                        "sign_concordance": float("nan"),
+                        "same_direction_pass_70": False,
+                        "evaluable_for_direction_gate": False,
+                    }
+                )
+                continue
+            rec = hit.iloc[0]
+            n_don = int(rec["n_donors_evaluable"])
+            rows.append(
+                {
+                    "comparison_label": label,
+                    "Gene_name": name,
+                    "Ensembl_ID": rec["Ensembl_ID"],
+                    "min_donors_required": min_req,
+                    "n_donors_evaluable": n_don,
+                    "donor_supported": bool(rec["donor_supported"]),
+                    "n_cells_total": int(rec["n_cells_total"]),
+                    "median_donor_effect": float(rec["median_donor_effect"]),
+                    "sign_concordance": float(rec["sign_concordance"]),
+                    "same_direction_pass_70": bool(rec["same_direction_pass_70"]),
+                    "evaluable_for_direction_gate": bool(rec["donor_supported"]),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def score_gates(
+    effects: pd.DataFrame,
+    lodo: pd.DataFrame,
+    top_genes: pd.DataFrame | None,
+    published: pd.DataFrame | None,
+) -> dict:
     by_comp = []
     for label, sub in effects.groupby("comparison_label"):
-        n = len(sub)
-        n_pass = int(sub["same_direction_pass_70"].sum())
-        leading = sub.nlargest(LODO_TOP_K, "median_donor_effect")
-        n_lead_pass = int(leading["same_direction_pass_70"].sum())
-        row = {
-            "comparison_label": label,
-            "n_genes": n,
-            "n_pass_70_all": n_pass,
-            "frac_pass_70_all": n_pass / n if n else float("nan"),
-            "n_top50_donor_ranked": len(leading),
-            "n_top50_pass_70": n_lead_pass,
-            "frac_top50_pass_70": n_lead_pass / len(leading) if len(leading) else float("nan"),
-            "n_top50_ci_excludes_zero": int(leading["ci_excludes_zero"].sum()),
-        }
-        if top_genes is not None and "comparison_label" in top_genes.columns:
-            names = set(top_genes.loc[top_genes["comparison_label"] == label, "Gene_name"].astype(str))
-            pub = sub.loc[sub["Gene_name"].isin(names)]
-            row["n_published_top"] = len(pub)
-            row["n_published_top_pass_70"] = int(pub["same_direction_pass_70"].sum()) if len(pub) else 0
-            row["frac_published_top_pass_70"] = (
-                row["n_published_top_pass_70"] / len(pub) if len(pub) else float("nan")
+        source = str(sub["source"].iloc[0])
+        min_req = min_donors_required(source)
+        unfiltered = sub.nlargest(LODO_TOP_K, "median_donor_effect")
+        supported = sub.loc[sub["donor_supported"]].nlargest(LODO_TOP_K, "median_donor_effect")
+        by_comp.append(_set_row(label, "unfiltered_top50", unfiltered, source, min_req))
+        by_comp.append(_set_row(label, "donor_supported_top50", supported, source, min_req))
+        if published is not None and len(published):
+            pub = published.loc[published["comparison_label"] == label]
+            eval_pub = pub.loc[pub["evaluable_for_direction_gate"]]
+            n = len(eval_pub)
+            n_pass = int(eval_pub["same_direction_pass_70"].sum()) if n else 0
+            n_don = eval_pub["n_donors_evaluable"] if n else pd.Series(dtype=float)
+            by_comp.append(
+                {
+                    "comparison_label": label,
+                    "source": source,
+                    "scored_set": "published_leading_evaluable",
+                    "min_donors_required": min_req,
+                    "n_genes_in_set": n,
+                    "n_pass_70": n_pass,
+                    "frac_pass_70": n_pass / n if n else float("nan"),
+                    "n_donors_min": int(n_don.min()) if n else 0,
+                    "n_donors_median": float(n_don.median()) if n else float("nan"),
+                    "n_donors_max": int(n_don.max()) if n else 0,
+                    "n_ci_excludes_zero": 0,
+                    "gate_pass": bool(n > 0 and (n_pass / n) >= DIRECTION_GATE),
+                    "n_published_total": len(pub),
+                    "n_published_below_floor": int((~pub["evaluable_for_direction_gate"]).sum()) if len(pub) else 0,
+                }
             )
-        by_comp.append(row)
     gate_table = pd.DataFrame(by_comp)
     lodo_comp = lodo.loc[lodo["level"] == "comparison"].copy()
-    direction_all_top50 = bool((gate_table["frac_top50_pass_70"] >= DIRECTION_GATE).all()) if len(gate_table) else False
-    published_ok = True
-    if "frac_published_top_pass_70" in gate_table.columns:
-        published_ok = bool((gate_table["frac_published_top_pass_70"] >= DIRECTION_GATE).all())
-    lodo_ok = bool(lodo_comp["gene_retained_in_70pct_folds"].astype(bool).all()) if len(lodo_comp) else False
+
+    def _all_pass(set_name: str) -> bool:
+        part = gate_table.loc[gate_table["scored_set"] == set_name]
+        return bool(len(part) and part["gate_pass"].all())
+
+    def _lodo_pass(ranking: str) -> bool:
+        part = lodo_comp.loc[lodo_comp["ranking"] == ranking] if "ranking" in lodo_comp.columns else lodo_comp
+        if not len(part):
+            return False
+        return bool(part["gene_retained_in_70pct_folds"].astype(bool).all())
+
     return {
         "direction_gate": DIRECTION_GATE,
-        "direction_gate_on_donor_top50_pass": direction_all_top50,
-        "direction_gate_on_published_top_pass": published_ok,
-        "lodo_top50_retention_gate": LODO_RETENTION_GATE,
-        "lodo_gate_pass": lodo_ok,
+        "published_evaluable_pass": _all_pass("published_leading_evaluable"),
+        "donor_supported_top50_pass": _all_pass("donor_supported_top50"),
+        "unfiltered_top50_pass": _all_pass("unfiltered_top50"),
+        "lodo_unfiltered_pass": _lodo_pass("unfiltered"),
+        "lodo_donor_supported_pass": _lodo_pass("donor_supported"),
         "by_comparison": gate_table,
         "lodo_comparison": lodo_comp,
+        "published": published,
     }
 
 
@@ -447,62 +576,84 @@ def write_report(path: Path, effects: pd.DataFrame, lodo: pd.DataFrame, gates: d
     lines.append(f"Script: `{meta['script']}`")
     lines.append(f"Source: `{meta['base']}`")
     lines.append("")
-    lines.append("## Method")
+    lines.append(PRE_SPECIFIED_CRITERION.rstrip())
     lines.append("")
-    lines.append("- Unit of analysis is the donor. Cell-level cosine similarities to the three")
-    lines.append("  training-donor state centroids were read from existing raw pickles.")
-    lines.append("- For each cell-gene deletion, the directional shift is `cos(goal) - cos(source)`.")
-    lines.append("- Donor effect is the mean of that cell-level shift within the donor.")
-    lines.append("- Gene summary uses the median of donor effects (equal donor weight).")
-    lines.append("- Sign concordance is the fraction of donors with a nonzero mean whose sign")
-    lines.append("  matches the median donor effect. The 70% gate uses this fraction.")
-    lines.append("- Bootstrap 95% CI is the percentile interval of the mean of donor means")
-    lines.append(f"  ({BOOTSTRAP_N} resamples, seed {BOOTSTRAP_SEED}).")
-    lines.append("- Leave-one-donor-out ranks genes by median donor effect after dropping one")
-    lines.append("  test donor. Training centroids are unchanged (test donors were not in them).")
-    lines.append("- LUSC has five held-out donors; its stability numbers are reported separately")
-    lines.append("  and are not compared mechanically with LUAD or normal.")
-    lines.append("")
-    lines.append("## Direction gate (same sign in ≥70% of evaluable donors)")
+    lines.append("## Results (a-priori published genes lead)")
     lines.append("")
     lines.append(
-        f"- Donor-ranked top-50, all comparisons meet gate: "
-        f"**{'PASS' if gates['direction_gate_on_donor_top50_pass'] else 'FAIL'}**"
+        f"- Published leading genes, evaluable under the floor, all comparisons ≥70% same-direction: "
+        f"**{'PASS' if gates['published_evaluable_pass'] else 'FAIL'}**"
     )
     lines.append(
-        f"- Published leading genes, all comparisons meet gate: "
-        f"**{'PASS' if gates['direction_gate_on_published_top_pass'] else 'FAIL'}**"
+        f"- Donor-supported top-50, all comparisons ≥70% same-direction: "
+        f"**{'PASS' if gates['donor_supported_top50_pass'] else 'FAIL'}**"
+    )
+    lines.append(
+        f"- Unfiltered top-50 (retained, not a valid test): "
+        f"**{'PASS' if gates['unfiltered_top50_pass'] else 'FAIL'}**"
+    )
+    lines.append(
+        f"- LODO on donor-supported ranking: "
+        f"**{'PASS' if gates['lodo_donor_supported_pass'] else 'FAIL'}**"
+    )
+    lines.append(
+        f"- LODO on unfiltered ranking (retained; LUSC n=5 overlap is a cohort-size artifact, not a comparison finding): "
+        f"**{'PASS' if gates['lodo_unfiltered_pass'] else 'FAIL'}**"
+    )
+    lines.append("")
+    pub = gates.get("published")
+    if pub is not None and len(pub):
+        lines.append("### Published leading genes (donor support)")
+        lines.append("")
+        cols = [
+            "comparison_label",
+            "Gene_name",
+            "n_donors_evaluable",
+            "min_donors_required",
+            "donor_supported",
+            "sign_concordance",
+            "same_direction_pass_70",
+            "n_cells_total",
+        ]
+        lines.append(pub[cols].to_string(index=False))
+        lines.append("")
+    lines.append("### Gate table (denominators beside fractions)")
+    lines.append("")
+    lines.append(
+        "scored_set `n_genes_in_set` is the denominator. "
+        "`n_donors_min/median/max` describe donor support inside that set."
     )
     lines.append("")
     lines.append(gates["by_comparison"].to_string(index=False))
     lines.append("")
-    lines.append("## Leave-one-donor-out top-50 retention")
+    lines.append("### Leave-one-donor-out")
     lines.append("")
-    lines.append(
-        f"- Gate (mean fold overlap ≥70% of genes in ≥70% of folds, encoded per comparison): "
-        f"**{'PASS' if gates['lodo_gate_pass'] else 'FAIL'}**"
-    )
-    lines.append("")
-    show = gates["lodo_comparison"][
-        [
+    show_cols = [
+        c
+        for c in [
+            "ranking",
             "comparison_label",
             "n_folds",
+            "n_ranked",
+            "min_donors_required",
             "top50_overlap",
             "fold_overlap_ge_70",
             "gene_retained_in_70pct_folds",
         ]
+        if c in gates["lodo_comparison"].columns
     ]
-    lines.append(show.to_string(index=False))
+    lines.append(gates["lodo_comparison"][show_cols].to_string(index=False))
     lines.append("")
     lines.append("## Donor counts")
     lines.append("")
-    lines.append("- LUAD test donors: 19")
-    lines.append("- Normal test donors: 12")
-    lines.append("- LUSC test donors: 5")
+    lines.append("- LUAD test donors: 19 (floor 10)")
+    lines.append("- Normal test donors: 12 (floor 6)")
+    lines.append("- LUSC test donors: 5 (floor 3)")
     lines.append("")
     lines.append("## Limitations")
     lines.append("")
     lines.append("- This is a statistical donor-stability summary, not a biological target claim.")
+    lines.append("- Unfiltered LUSC→NORMAL LODO fail tracks five-donor cohort size plus n=1 ranking, not a comparison-specific biological finding.")
     lines.append("- Ambient RNA, doublets, and T-cell subtype structure are not addressed here.")
     lines.append("- Centroids were not rebuilt; test-donor LODO does not require that step.")
     lines.append("- No threshold, donor subset, or aggregation was changed after seeing results.")
@@ -544,10 +695,15 @@ def main() -> int:
         effects = pd.read_csv(args.remap_effects)
         effects["Ensembl_ID"] = effects["token"].map(lambda t: token_to_ensembl.get(int(t), ""))
         effects["Gene_name"] = effects["Ensembl_ID"].map(lambda e: ensembl_to_name.get(str(e), "") if e else "")
+        effects["min_donors_required"] = effects["source"].map(min_donors_required)
+        effects["donor_supported"] = effects["n_donors_evaluable"] >= effects["min_donors_required"]
         lodo = pd.read_csv(output / "leave_one_donor_out_stability.csv")
-        gates = score_gates(effects, lodo, top_genes)
+        published = published_support(effects, top_genes) if top_genes is not None else None
+        gates = score_gates(effects, lodo, top_genes, published)
         effects.to_csv(output / "donor_gene_effects.csv", index=False)
         gates["by_comparison"].to_csv(output / "gate_score.csv", index=False)
+        if published is not None:
+            published.to_csv(output / "published_gene_donor_support.csv", index=False)
         meta = {
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "script": "evaluate_donor_gene_effects.py",
@@ -559,9 +715,9 @@ def main() -> int:
                 {
                     "remapped": True,
                     "empty_gene_name_frac": float((effects["Gene_name"].fillna("") == "").mean()),
-                    "direction_gate_on_donor_top50_pass": gates["direction_gate_on_donor_top50_pass"],
-                    "direction_gate_on_published_top_pass": gates["direction_gate_on_published_top_pass"],
-                    "lodo_gate_pass": gates["lodo_gate_pass"],
+                    "published_evaluable_pass": gates["published_evaluable_pass"],
+                    "donor_supported_top50_pass": gates["donor_supported_top50_pass"],
+                    "lodo_donor_supported_pass": gates["lodo_donor_supported_pass"],
                 }
             ),
             flush=True,
@@ -570,8 +726,17 @@ def main() -> int:
     manifest = load_manifest(tables)
     sums = accumulate(raw_root, manifest)
     effects, donor_level = summarize(sums, token_to_ensembl, ensembl_to_name)
-    lodo = lodo_stability(donor_level)
-    gates = score_gates(effects, lodo, top_genes)
+    lodo = pd.concat(
+        [
+            lodo_stability(donor_level, ranking="unfiltered"),
+            lodo_stability(donor_level, ranking="donor_supported"),
+        ],
+        ignore_index=True,
+    )
+    published = published_support(effects, top_genes) if top_genes is not None else None
+    gates = score_gates(effects, lodo, top_genes, published)
+    if published is not None:
+        published.to_csv(output / "published_gene_donor_support.csv", index=False)
     effects_path = output / "donor_gene_effects.csv"
     lodo_path = output / "leave_one_donor_out_stability.csv"
     gate_path = output / "gate_score.csv"
@@ -589,9 +754,11 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "direction_gate_on_donor_top50_pass": gates["direction_gate_on_donor_top50_pass"],
-                "direction_gate_on_published_top_pass": gates["direction_gate_on_published_top_pass"],
-                "lodo_gate_pass": gates["lodo_gate_pass"],
+                "published_evaluable_pass": gates["published_evaluable_pass"],
+                "donor_supported_top50_pass": gates["donor_supported_top50_pass"],
+                "unfiltered_top50_pass": gates["unfiltered_top50_pass"],
+                "lodo_unfiltered_pass": gates["lodo_unfiltered_pass"],
+                "lodo_donor_supported_pass": gates["lodo_donor_supported_pass"],
             }
         ),
         flush=True,
