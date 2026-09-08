@@ -82,3 +82,8 @@ proposed threshold.
 
 Write future outputs under `../results/analysis/` and preserve scripts or
 notebooks needed to reproduce them.
+
+Donor-level aggregation is implemented in `evaluate_donor_gene_effects.py`.
+Results: `../results/analysis/tables/donor_gene_effects.csv`,
+`../results/analysis/tables/leave_one_donor_out_stability.csv`, and
+`../results/analysis/REPORT.md`.
