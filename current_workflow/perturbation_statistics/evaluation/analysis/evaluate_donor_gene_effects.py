@@ -438,10 +438,22 @@ def lodo_stability(donor_level, ranking: str = "unfiltered", min_n: int | None =
     return pd.DataFrame(rows)
 
 
+def _fail_margin_genes(n: int, n_pass: int, gate_pass: bool) -> float:
+    """Genes that would have to flip from pass to fail before a currently-PASSing
+    gate becomes FAIL. NaN when the gate is not passing (already reported FAIL,
+    so no margin-of-safety framing applies) or the set is empty."""
+    if not n or not gate_pass:
+        return float("nan")
+    min_required = math.ceil(DIRECTION_GATE * n - 1e-9)
+    return float(n_pass - min_required + 1)
+
+
 def _set_row(label: str, scored_set: str, sub: pd.DataFrame, source: str, min_req: int) -> dict:
     n = len(sub)
     n_pass = int(sub["same_direction_pass_70"].sum()) if n else 0
     n_don = sub["n_donors_evaluable"] if n else pd.Series(dtype=float)
+    frac_pass = n_pass / n if n else float("nan")
+    gate_pass = bool(n > 0 and frac_pass >= DIRECTION_GATE)
     return {
         "comparison_label": label,
         "source": source,
@@ -449,12 +461,15 @@ def _set_row(label: str, scored_set: str, sub: pd.DataFrame, source: str, min_re
         "min_donors_required": min_req,
         "n_genes_in_set": n,
         "n_pass_70": n_pass,
-        "frac_pass_70": n_pass / n if n else float("nan"),
+        "frac_pass_70": frac_pass,
         "n_donors_min": int(n_don.min()) if n else 0,
         "n_donors_median": float(n_don.median()) if n else float("nan"),
         "n_donors_max": int(n_don.max()) if n else 0,
+        # Computed the same way in every branch that builds this dict - see
+        # score_gates(): no scored_set may hardcode this while another computes it.
         "n_ci_excludes_zero": int(sub["ci_excludes_zero"].sum()) if n else 0,
-        "gate_pass": bool(n > 0 and (n_pass / n) >= DIRECTION_GATE),
+        "gate_pass": gate_pass,
+        "fail_margin_genes": _fail_margin_genes(n, n_pass, gate_pass),
     }
 
 
@@ -479,6 +494,7 @@ def published_support(effects: pd.DataFrame, top_genes: pd.DataFrame) -> pd.Data
                         "n_cells_total": 0,
                         "median_donor_effect": float("nan"),
                         "sign_concordance": float("nan"),
+                        "ci_excludes_zero": False,
                         "same_direction_pass_70": False,
                         "evaluable_for_direction_gate": False,
                     }
@@ -497,6 +513,7 @@ def published_support(effects: pd.DataFrame, top_genes: pd.DataFrame) -> pd.Data
                     "n_cells_total": int(rec["n_cells_total"]),
                     "median_donor_effect": float(rec["median_donor_effect"]),
                     "sign_concordance": float(rec["sign_concordance"]),
+                    "ci_excludes_zero": bool(rec["ci_excludes_zero"]),
                     "same_direction_pass_70": bool(rec["same_direction_pass_70"]),
                     "evaluable_for_direction_gate": bool(rec["donor_supported"]),
                 }
@@ -521,27 +538,12 @@ def score_gates(
         if published is not None and len(published):
             pub = published.loc[published["comparison_label"] == label]
             eval_pub = pub.loc[pub["evaluable_for_direction_gate"]]
-            n = len(eval_pub)
-            n_pass = int(eval_pub["same_direction_pass_70"].sum()) if n else 0
-            n_don = eval_pub["n_donors_evaluable"] if n else pd.Series(dtype=float)
-            by_comp.append(
-                {
-                    "comparison_label": label,
-                    "source": source,
-                    "scored_set": "published_leading_evaluable",
-                    "min_donors_required": min_req,
-                    "n_genes_in_set": n,
-                    "n_pass_70": n_pass,
-                    "frac_pass_70": n_pass / n if n else float("nan"),
-                    "n_donors_min": int(n_don.min()) if n else 0,
-                    "n_donors_median": float(n_don.median()) if n else float("nan"),
-                    "n_donors_max": int(n_don.max()) if n else 0,
-                    "n_ci_excludes_zero": 0,
-                    "gate_pass": bool(n > 0 and (n_pass / n) >= DIRECTION_GATE),
-                    "n_published_total": len(pub),
-                    "n_published_below_floor": int((~pub["evaluable_for_direction_gate"]).sum()) if len(pub) else 0,
-                }
-            )
+            # Route through the same _set_row() every other scored_set uses, so this
+            # branch cannot silently drift into hardcoding a field _set_row computes.
+            row = _set_row(label, "published_leading_evaluable", eval_pub, source, min_req)
+            row["n_published_total"] = len(pub)
+            row["n_published_below_floor"] = int((~pub["evaluable_for_direction_gate"]).sum()) if len(pub) else 0
+            by_comp.append(row)
     gate_table = pd.DataFrame(by_comp)
     lodo_comp = lodo.loc[lodo["level"] == "comparison"].copy()
 
@@ -612,6 +614,7 @@ def write_report(path: Path, effects: pd.DataFrame, lodo: pd.DataFrame, gates: d
             "min_donors_required",
             "donor_supported",
             "sign_concordance",
+            "ci_excludes_zero",
             "same_direction_pass_70",
             "n_cells_total",
         ]
@@ -621,11 +624,33 @@ def write_report(path: Path, effects: pd.DataFrame, lodo: pd.DataFrame, gates: d
     lines.append("")
     lines.append(
         "scored_set `n_genes_in_set` is the denominator. "
-        "`n_donors_min/median/max` describe donor support inside that set."
+        "`n_donors_min/median/max` describe donor support inside that set. "
+        "`fail_margin_genes` (only defined when `gate_pass` is True) is how many currently-passing "
+        "genes would have to flip direction before this row's PASS became FAIL - a low number means "
+        "the PASS is fragile, not a false statement, but one that needs the margin stated next to it."
     )
     lines.append("")
     lines.append(gates["by_comparison"].to_string(index=False))
     lines.append("")
+    at_threshold = gates["by_comparison"]
+    at_threshold = at_threshold.loc[
+        at_threshold["gate_pass"] & (at_threshold["fail_margin_genes"] <= 2)
+    ]
+    if len(at_threshold):
+        lines.append(
+            "**PASS alone is a true statement that misleads for the rows below - each passes by a "
+            "one- or two-gene margin:**"
+        )
+        lines.append("")
+        for row in at_threshold.itertuples(index=False):
+            margin = int(row.fail_margin_genes)
+            qualifier = ", AT THE THRESHOLD" if margin == 1 else ""
+            lines.append(
+                f"- `{row.comparison_label}` / `{row.scored_set}`: **{row.n_pass_70}/{row.n_genes_in_set} "
+                f"= {row.frac_pass_70:.2f}{qualifier}** - a **{margin}-gene margin** "
+                f"(losing {margin} more would drop it below {DIRECTION_GATE:.0%})."
+            )
+        lines.append("")
     lines.append("### Leave-one-donor-out")
     lines.append("")
     show_cols = [
@@ -644,6 +669,24 @@ def write_report(path: Path, effects: pd.DataFrame, lodo: pd.DataFrame, gates: d
     ]
     lines.append(gates["lodo_comparison"][show_cols].to_string(index=False))
     lines.append("")
+    lodo_comp = gates["lodo_comparison"]
+    if {"unfiltered", "donor_supported"}.issubset(set(lodo_comp.get("ranking", pd.Series(dtype=str)))):
+        wide = lodo_comp.pivot(index="comparison_label", columns="ranking", values="top50_overlap")
+        if {"unfiltered", "donor_supported"}.issubset(wide.columns):
+            wide = wide.assign(delta=wide["donor_supported"] - wide["unfiltered"])
+            lines.append("### OBSERVATION: donor-supported vs. unfiltered LODO direction split")
+            lines.append("")
+            lines.append(
+                "Descriptive only - not a claim, and no threshold or ranking was changed after seeing this split:"
+            )
+            lines.append("")
+            for label, row in wide.sort_values("delta", ascending=False).iterrows():
+                direction = "improves" if row["delta"] > 0 else ("degrades" if row["delta"] < 0 else "is unchanged")
+                lines.append(
+                    f"- `{label}`: unfiltered {row['unfiltered']:.4f} -> donor-supported "
+                    f"{row['donor_supported']:.4f} ({direction}, delta {row['delta']:+.4f})"
+                )
+            lines.append("")
     lines.append("## Donor counts")
     lines.append("")
     lines.append("- LUAD test donors: 19 (floor 10)")
@@ -692,12 +735,14 @@ def main() -> int:
                     ensembl_to_name.setdefault(str(row.Ensembl_ID), str(row.Gene_name))
     top_genes = pd.read_csv(args.top_genes) if args.top_genes and args.top_genes.exists() else None
     if args.remap_effects is not None:
-        effects = pd.read_csv(args.remap_effects)
+        # pandas' default C float parser is not bit-exact; round_trip preserves the
+        # written values exactly so a packaging-only regenerate cannot perturb data.
+        effects = pd.read_csv(args.remap_effects, float_precision="round_trip")
         effects["Ensembl_ID"] = effects["token"].map(lambda t: token_to_ensembl.get(int(t), ""))
         effects["Gene_name"] = effects["Ensembl_ID"].map(lambda e: ensembl_to_name.get(str(e), "") if e else "")
         effects["min_donors_required"] = effects["source"].map(min_donors_required)
         effects["donor_supported"] = effects["n_donors_evaluable"] >= effects["min_donors_required"]
-        lodo = pd.read_csv(output / "leave_one_donor_out_stability.csv")
+        lodo = pd.read_csv(output / "leave_one_donor_out_stability.csv", float_precision="round_trip")
         published = published_support(effects, top_genes) if top_genes is not None else None
         gates = score_gates(effects, lodo, top_genes, published)
         effects.to_csv(output / "donor_gene_effects.csv", index=False)
