@@ -1,5 +1,17 @@
 # Biological evaluation — Priority 1 (ambient RNA / doublet sensitivity), partial
 
+**STATUS: the per-cell half of this task is BLOCKED, not deprioritised, not skipped.**
+As of 2026-09-08 ~22:13Z the entire compute fleet (`petadimensionlab-super-server`, `dgx`,
+`thinkstation1`, `thinkstation2`, `thinkstation3`) went offline within about a minute of each
+other - a site-level uplink/power event, confirmed independently via `tailscale status` showing
+every host transmitting with zero received traffic. This is not a sandbox permission boundary:
+god has direct SSH access to these hosts and could not reach any of them either. There was no
+data source to point at and no machine to run the per-cell diagnostic on, for anyone, at the
+time this was worked. **Parking Priority 1's per-cell half here is the correct outcome given
+that outage, not a workaround chosen instead of finishing it.** Do not read the gap below as
+something a more thorough pass would have closed - re-check for compute-fleet availability
+before assuming the blocker still holds.
+
 **This is a partial first pass, not the Priority 1 deliverable the biology README specifies.**
 It flags candidate genes by lineage **identity** against a small vetted anchor panel. It does
 **not** compute per-cell contamination burden, does not compute or review doublet scores, and
@@ -50,13 +62,19 @@ Output: `tables/candidate_interpretation_classes.csv`.
 1. The source single-cell object for this cohort (or a copy of its `obs` table: celltype,
    individual, library size, and a doublet score column if one already exists upstream), most
    likely on `thinkstation1`/`thinkstation2` alongside
-   `~/workspace/KD/tcell_luad_lusc_normal_luscmax7000_heldout_allgene_perturbation/`. Sandbox
-   policy blocks direct SSH from this session (same boundary hit repeatedly this week), so this
-   needs either a compute-node run relayed back (the pattern used for the T4 GPU phases) or a
-   pointed local copy.
-2. With that object: port `ambient_risk_diagnostic.py`'s epithelial/alveolar/myeloid/
-   stromal/erythroid burden scoring and its ambient-risk logistic model to this cohort, review or
-   compute doublet scores, then produce `cell_contamination_scores.csv`.
+   `~/workspace/KD/tcell_luad_lusc_normal_luscmax7000_heldout_allgene_perturbation/`. Wait for the
+   compute fleet to come back online (see STATUS above), then either run the per-cell script on
+   that host and relay compact results back (the pattern used for the T4 GPU phases) or copy the
+   object locally - whichever is cheaper once the hosts are reachable again.
+2. With that object: run `../ambient_risk_diagnostic.py` (already ported and committed here,
+   see its own docstring - it is UNRUN, its default `NSCLC_H5AD` path is an unverified guess, and
+   `main()` refuses to execute until that guard is removed). It carries the same
+   epithelial/alveolar/myeloid/stromal/erythroid burden scoring and ambient-risk logistic model as
+   the sibling repo's script, adapted to this repo's candidate-table schema and local gc104M
+   symbol dictionaries; only its candidate-loading and symbol-map helpers are tested
+   (`test_ambient_risk_diagnostic.py`, 7/7 pass) since the h5ad-dependent feature computation
+   cannot be exercised without the source object. Review or compute doublet scores separately if
+   the h5ad has none.
 3. Re-run the perturbation ranking excluding high-burden/high-doublet cells (reusing
    `evaluate_donor_gene_effects.py`'s `accumulate()`/`summarize()` on the reduced cell set, not a
    different method) to produce `decontamination_rank_stability.csv` and check the provisional
