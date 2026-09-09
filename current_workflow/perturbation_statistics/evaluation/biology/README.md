@@ -14,15 +14,32 @@ vascular-associated genes such as `FBLN1`, `DCN`, and `ACKR1`. Their presence
 in a T-cell-selected analysis is a major alternative explanation that must be
 tested directly.
 
-- Calculate epithelial, alveolar, myeloid, stromal, and erythroid marker
-  burdens per cell.
-- Review existing doublet scores or calculate them if absent.
-- Apply an ambient-RNA correction method and retain both corrected and
-  uncorrected results.
-- Repeat the perturbation ranking after excluding high-burden and high-doublet
-  cells.
-- Test whether gene effects correlate with contamination burden or are
-  concentrated in a small set of specimens.
+**Scope on the confirmed object, settled 2026-09-09.** Priority 1 here supports
+**expression-based lineage cross-expression only**. Two of the originally-listed
+components are **retired on this object**, and the ranking is **not rerun** by the
+diagnostic:
+
+- ✅ **Per-cell lineage marker burden** — done. `../ambient_risk_diagnostic.py` computes
+  `log1p(CPM)` module scores over the ambient and T-cell anchor panels from
+  `layers["count"]`, and writes `../results/biology/tables/cell_contamination_scores.csv`.
+- ❌ **Doublet scores — RETIRED, not skipped.** `obs["doublet_status"]` is `singlet` for all
+  21,000 cells: the object is pre-filtered upstream. A doublet review here would report zero
+  doublets, which is true and meaningless. **The manifest states the retirement rather than
+  reporting a zero**, because a clean-looking "no doublets" is the most reassuring possible
+  wrong answer.
+- ❌ **Mitochondrial QC — RETIRED.** `pct_counts_mito` and `total_counts_mito` are identically
+  zero, and `var["mito"]` flags zero genes: the mitochondrial genes are absent from the gene
+  set entirely.
+- ⬜ **Ambient-RNA correction**, and **repeating the perturbation ranking** after excluding
+  high-burden cells, are **not attempted** by this diagnostic. They need a separate,
+  explicitly-scoped pass; the per-cell scores above are their input.
+- ⬜ Whether gene effects correlate with contamination burden is likewise still open.
+
+**Sequencing depth is not contamination.** `total_counts` and `n_genes_by_counts` vary widely
+across cells; they are carried as `depth_`-prefixed metadata and must not be substituted for a
+contamination measure.
+
+See `../results/biology/REPORT.md` for results and the verification record.
 
 Suggested provisional gate: retain at least 60% of the top 20 candidates with
 the same direction after the prespecified decontamination and exclusion
@@ -75,8 +92,9 @@ Assign every reviewed candidate to one of these classes:
 
 ## Minimum biological deliverables
 
-- `cell_contamination_scores.csv`
-- `decontamination_rank_stability.csv`
+- `cell_contamination_scores.csv` — **produced 2026-09-09**
+- `decontamination_rank_stability.csv` — still outstanding; needs the ranking rerun, which
+  Priority 1 as scoped does not perform
 - `tcell_subtype_effects.csv`
 - `candidate_interpretation_classes.csv`
 - `pathway_leading_edge_modules.csv`
