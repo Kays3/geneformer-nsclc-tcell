@@ -183,6 +183,33 @@ reconciled: it is a question for review, not something to average away. **The tw
 independent evidence** either — they share the same anchor panels — so agreement between them
 must not be read as replication.
 
+### Review outcome — Pam, 2026-09-09
+
+> **The question posed immediately above has been reviewed and answered. This block records that
+> ruling; it does not amend the findings above, which stand exactly as written.**
+
+**The expression-based per-cell lineage cross-expression, together with its retained gene-level
+candidate merge, is the OPERATIVE quantitative flag set for Priority 1.** It is measured on this
+cohort's raw `layers["count"]` and answers the contamination question directly.
+
+**The earlier identity-only flags are complementary qualitative annotation and context — not a
+competing measurement.** They are **not to be unioned or intersected** with the expression set.
+Both sets stay visible and provenance-labelled; neither is folded into the other.
+
+**Agreement between the two passes is still not independent replication**, for the reason already
+given above: they share anchor panels. The ruling rests on that sentence rather than overriding it.
+
+**The disagreement stands as an explicit unresolved result.** It is **not** to be resolved by
+choosing whichever set has the larger total, nor by silent reconciliation. **A genuinely
+independent third signal would be required before any candidate-level keep/remove claim — and on
+this object no such signal is available, because the doublet and mitochondrial components are
+constant by construction and retired.** No further resolution is to be attempted here.
+
+**`SFTPC` specifically** is to be reported as **lineage-foreign by identity, with no
+expression-based ambient-risk support on this object.** That is **neither evidence of clean
+intrinsic T-cell expression nor grounds for automatic removal.** It must not be promoted or
+demoted on the strength of either pass alone.
+
 ## Verification
 
 - The run guard refuses without `NSCLC_AMBIENT_ALLOW_RUN=1`, confirmed on the real host.
