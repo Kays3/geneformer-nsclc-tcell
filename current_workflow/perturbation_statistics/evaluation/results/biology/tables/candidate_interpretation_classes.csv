@@ -1,0 +1,91 @@
+comparison_label,Gene_name,Ensembl_ID,n_donors_evaluable,donor_supported,sign_concordance,ci_excludes_zero,same_direction_pass_70,lineage_flag,interpretation_class,classification_basis
+LUAD → LUSC,FN1,ENSG00000115414,17,True,0.7647058823529411,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,GABPB1,ENSG00000104064,17,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,HBB,ENSG00000244734,18,True,0.8888888888888888,True,True,erythroid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → LUSC,HSPA1B,ENSG00000204388,18,True,0.8333333333333334,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUAD → LUSC,IFNAR2,ENSG00000159110,18,True,0.8888888888888888,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,NAPSA,ENSG00000131400,15,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → LUSC,NME2,ENSG00000243678,16,True,0.875,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,RAB4B,ENSG00000167578,18,True,0.9444444444444444,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,RAD50,ENSG00000113522,17,True,0.8823529411764706,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,S100A4,ENSG00000196154,19,True,0.9473684210526316,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUAD → LUSC,SCGB3A1,ENSG00000161055,17,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → LUSC,SELENOP,ENSG00000250722,15,True,0.6,False,False,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → LUSC,SFTPB,ENSG00000168878,16,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → LUSC,SFTPC,ENSG00000168484,18,True,0.9444444444444444,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → LUSC,TRAPPC5,ENSG00000181029,12,True,0.75,False,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → NORMAL,AGR2,ENSG00000106541,15,True,0.8666666666666667,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → NORMAL,BTG1,ENSG00000133639,19,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → NORMAL,EEF1G,ENSG00000254772,18,True,0.6111111111111112,False,False,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUAD → NORMAL,HBA1,ENSG00000206172,16,True,0.9375,True,True,erythroid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → NORMAL,KRT18,ENSG00000111057,16,True,0.9375,True,True,epithelial,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → NORMAL,KRT19,ENSG00000171345,16,True,0.9375,True,True,epithelial,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → NORMAL,KRT7,ENSG00000135480,13,True,1.0,True,True,epithelial,4_ambient_doublet_sensitive,keratin 7 - canonical epithelial marker (same family as anchored KRT8/18/19)
+LUAD → NORMAL,KRT8,ENSG00000170421,13,True,1.0,True,True,epithelial,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → NORMAL,MDK,ENSG00000110492,12,True,0.9166666666666666,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → NORMAL,MUC1,ENSG00000185499,17,True,0.8823529411764706,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → NORMAL,PIGR,ENSG00000162896,12,True,0.9166666666666666,True,True,epithelial,4_ambient_doublet_sensitive,polymeric immunoglobulin receptor - canonical glandular/epithelial secretory marker
+LUAD → NORMAL,POLR2J3,ENSG00000168255,17,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUAD → NORMAL,SCGB3A2,ENSG00000164265,17,True,0.9411764705882352,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUAD → NORMAL,SLC34A2,ENSG00000157765,14,True,0.9285714285714286,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,canonical alveolar type II pneumocyte-specific transporter
+LUAD → NORMAL,WFDC2,ENSG00000101443,15,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → LUAD,CXCL8,ENSG00000169429,3,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → LUAD,GPR174,ENSG00000147138,3,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → LUAD,GZMK,ENSG00000113088,3,True,1.0,True,True,t_cell_lymphoid,pending_identity_consistent_with_1_t_cell_intrinsic,"sibling-repo vetted T-cell-intrinsic anchor - identity only, not yet confirmed by per-cell burden"
+LUSC → LUAD,HBA1,ENSG00000206172,3,True,1.0,True,True,erythroid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → LUAD,HBA2,ENSG00000188536,3,True,1.0,True,True,erythroid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → LUAD,HBB,ENSG00000244734,4,True,1.0,True,True,erythroid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → LUAD,IL1R2,ENSG00000115590,3,True,0.6666666666666666,False,False,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → LUAD,KRT17,ENSG00000128422,3,True,1.0,True,True,epithelial,4_ambient_doublet_sensitive,keratin 17 - canonical epithelial marker (same family as anchored KRT8/18/19)
+LUSC → LUAD,MMP12,ENSG00000262406,2,False,1.0,True,True,myeloid,4_ambient_doublet_sensitive,macrophage metalloelastase - canonical myeloid/macrophage marker
+LUSC → LUAD,MNDA,ENSG00000163563,3,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → LUAD,S100A2,ENSG00000196754,3,True,1.0,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUSC → LUAD,S100A7,ENSG00000143556,3,True,1.0,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUSC → LUAD,S100A8,ENSG00000143546,3,True,1.0,True,True,myeloid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → LUAD,S100A9,ENSG00000163220,4,True,1.0,True,True,myeloid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → LUAD,TPSB2,ENSG00000197253,4,True,0.75,True,True,myeloid,4_ambient_doublet_sensitive,tryptase beta 2 - canonical mast cell marker
+LUSC → NORMAL,ARL6IP1,ENSG00000170540,3,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,BTG1,ENSG00000133639,5,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,CBX3,ENSG00000122565,5,True,0.8,False,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,FAM89B,ENSG00000176973,3,True,0.6666666666666666,False,False,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,H1-10,ENSG00000184897,3,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,H3-3B,ENSG00000132475,5,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,LYZ,ENSG00000090382,3,True,1.0,True,True,myeloid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+LUSC → NORMAL,NDUFB8,ENSG00000166136,4,True,0.5,False,False,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,PDCD7,ENSG00000090470,4,True,0.5,False,False,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,PNRC1,ENSG00000146278,4,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,PTMA,ENSG00000187514,5,True,0.8,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+LUSC → NORMAL,RPL21,ENSG00000122026,5,True,1.0,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUSC → NORMAL,RPL27A,ENSG00000166441,5,True,0.8,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUSC → NORMAL,RPS27,ENSG00000177954,5,True,0.8,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+LUSC → NORMAL,UQCR11,ENSG00000127540,3,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUAD,ACKR1,ENSG00000213088,8,True,0.875,True,True,stromal_vascular,4_ambient_doublet_sensitive,Duffy antigen receptor - canonical venular endothelial marker
+NORMAL → LUAD,CCN1,ENSG00000142871,8,True,0.875,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUAD,DCN,ENSG00000011465,9,True,1.0,True,True,stromal_vascular,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUAD,FBLN1,ENSG00000077942,6,True,1.0,True,True,stromal_vascular,4_ambient_doublet_sensitive,fibulin-1 - canonical stromal/ECM marker
+NORMAL → LUAD,HBA2,ENSG00000188536,8,True,0.75,False,True,erythroid,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUAD,HSPA1B,ENSG00000204388,12,True,1.0,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+NORMAL → LUAD,IGFBP6,ENSG00000167779,8,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUAD,MGP,ENSG00000111341,10,True,1.0,True,True,stromal_vascular,4_ambient_doublet_sensitive,matrix Gla protein - canonical vascular/stromal marker
+NORMAL → LUAD,PLA2G2A,ENSG00000188257,7,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUAD,PSMA6,ENSG00000100902,12,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUAD,RPS26,ENSG00000197728,12,True,1.0,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+NORMAL → LUAD,SFTPA1,ENSG00000122852,12,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUAD,SFTPA2,ENSG00000185303,9,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUAD,SFTPC,ENSG00000168484,12,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUAD,TXNIP,ENSG00000265972,12,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,DNAJB1,ENSG00000132002,12,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,FBLN1,ENSG00000077942,6,True,1.0,True,True,stromal_vascular,4_ambient_doublet_sensitive,fibulin-1 - canonical stromal/ECM marker
+NORMAL → LUSC,HSPA1B,ENSG00000204388,12,True,1.0,True,True,ambient_pattern_match,4_ambient_doublet_sensitive,matches sibling-repo explicit ambient/stress/ribosomal pattern
+NORMAL → LUSC,IFNAR2,ENSG00000159110,12,True,0.9166666666666666,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,MATR3,ENSG00000015479,7,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,MGP,ENSG00000111341,10,True,1.0,True,True,stromal_vascular,4_ambient_doublet_sensitive,matrix Gla protein - canonical vascular/stromal marker
+NORMAL → LUSC,PABPC3,ENSG00000151846,10,True,0.8,False,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,PRICKLE4,ENSG00000278224,7,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,RAB4B,ENSG00000167578,10,True,0.9,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,RAD50,ENSG00000113522,11,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
+NORMAL → LUSC,SFTPA1,ENSG00000122852,12,True,0.9166666666666666,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUSC,SFTPA2,ENSG00000185303,9,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUSC,SFTPB,ENSG00000168878,12,True,0.6666666666666666,False,False,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUSC,SFTPC,ENSG00000168484,12,True,1.0,True,True,epithelial_alveolar,4_ambient_doublet_sensitive,sibling-repo vetted ambient anchor (ambient_risk_diagnostic.py)
+NORMAL → LUSC,STEAP1B,ENSG00000105889,12,True,1.0,True,True,unclassified,pending_requires_per_cell_contamination_scoring,not in the vetted anchor panel or explicit pattern - identity alone is insufficient
