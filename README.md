@@ -72,3 +72,11 @@ requirements.txt                lightweight environment specification
 
 Large atlases, tokenized datasets, embeddings, checkpoints, and model weights
 remain outside Git.
+
+## Maintenance note: `tools/lab_env.sh`
+
+`tools/lab_env.sh` in this repository is **frozen as of 2026-09-29** and does not receive fixes.
+The maintained copy is
+[`geneformer-lung-tcell/tools/lab_env.sh`](https://github.com/Kays3/geneformer-lung-tcell/blob/main/tools/lab_env.sh),
+which adds explicit-variable precedence over `paths.env`, an exported `LAB_ROOT`, and an
+interpreter-usability check. Copy that file here before relying on this one.
